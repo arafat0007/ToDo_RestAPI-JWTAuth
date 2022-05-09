@@ -1,7 +1,11 @@
 package com.example.ToDo.Security.Config;
 
+import com.example.ToDo.JWT.JwtConfig;
+import com.example.ToDo.JWT.JwtTokenVerifier;
+import com.example.ToDo.JWT.JwtUsernameAndPasswordAuthenticationFilter;
 import com.example.ToDo.Services.UserService;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -11,20 +15,21 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import java.util.concurrent.TimeUnit;
+
+import javax.crypto.SecretKey;
 
 @Configuration
 @EnableWebSecurity
-//@EnableGlobalMethodSecurity(prePostEnabled = true)
+@EnableGlobalMethodSecurity(prePostEnabled = true)
 @AllArgsConstructor
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
+    private final PasswordEncoder passwordEncoder;
     private final UserService userService;
-    //private final PasswordEncoder passwordEncoder;
-    private final BCryptPasswordEncoder bCryptPasswordEncoder;
+    private final SecretKey secretKey;
+    private final JwtConfig jwtConfig;
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -35,28 +40,17 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .permitAll()
                 .antMatchers("/v2/api-docs")
                 .permitAll()
-                .anyRequest()
-                .authenticated()
+                .antMatchers("/v2/api-docs", "/swagger-resources/**", "/webjars/**", "/swagger-ui.html")
+                .permitAll()
                 .and()
-                .formLogin();
-                //.loginPage("/login")
-                //.permitAll()
-                //.defaultSuccessUrl("/test", true);
-//                //.passwordParameter("password")
-//                //.usernameParameter("username")
-//                .and()
-//                .rememberMe()
-//                .tokenValiditySeconds((int) TimeUnit.DAYS.toSeconds(21))
-//                .key("somethingverysecured")
-//                .rememberMeParameter("remember-me")
-//                .and()
-//                .logout()
-//                //.logoutUrl("/logout")
-//                .logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET")) // https://docs.spring.io/spring-security/site/docs/4.2.12.RELEASE/apidocs/org/springframework/security/config/annotation/web/configurers/LogoutConfigurer.html
-//                .clearAuthentication(true)
-//                .invalidateHttpSession(true)
-//                .deleteCookies("JSESSIONID", "remember-me")
-//                .logoutSuccessUrl("/login");;
+                .sessionManagement()
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and()
+                .addFilter(new JwtUsernameAndPasswordAuthenticationFilter(authenticationManager(), jwtConfig, secretKey))
+                .addFilterAfter(new JwtTokenVerifier(secretKey, jwtConfig),JwtUsernameAndPasswordAuthenticationFilter.class)
+                .authorizeRequests()
+                .anyRequest()
+                .authenticated();
     }
 
     @Override
@@ -67,7 +61,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Bean
     public AuthenticationProvider daoAuthenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setPasswordEncoder(bCryptPasswordEncoder);
+        provider.setPasswordEncoder(passwordEncoder);
         provider.setUserDetailsService(userService);
         return provider;
     }
