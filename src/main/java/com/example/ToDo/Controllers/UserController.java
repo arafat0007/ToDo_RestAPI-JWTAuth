@@ -5,6 +5,8 @@ import com.example.ToDo.Services.UserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.web.bind.annotation.*;
 
 @Api(description = "User controller is responsible for user registration and email confirmation")
@@ -16,6 +18,8 @@ public class UserController {
     @ApiOperation(value = "/registration", notes = "This endpoint lets user to register.")
     @PostMapping(path = "/registration")
     public String UserRegister(@RequestBody RegistrationRequest request){
+        Logger logger = LogManager.getLogger(UserController.class);
+        logger.info("From jwt registration controller");
         return userService.userRegister(request);
     }
 
