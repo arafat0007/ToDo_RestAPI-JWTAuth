@@ -9,8 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.example</groupId>
-	<artifactId>ToDo</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<artifactId>todojwt</artifactId>
 	<name>ToDo</name>
 	<description>A To Do application using Spring Boot and React</description>
 	<properties>
@@ -140,6 +139,7 @@
 				</configuration>
 			</plugin>
 		</plugins>
+		<finalName>todojwt</finalName>
 	</build>
 
 </project>
